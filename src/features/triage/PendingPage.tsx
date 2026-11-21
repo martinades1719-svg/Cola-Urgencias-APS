@@ -1,0 +1,12 @@
+import { useState } from 'react';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { ClipboardCheck, Clock3 } from 'lucide-react';
+import { pendingQuery } from '@/api/queries';
+import { useAuth } from '@/features/auth/AuthProvider';
+import { canAssess, maskedName, minutesSince, time } from '@/utils/clinical';
+import { Button } from '@/components/ui/button';
+import { Empty, PageHeading, SearchInput } from '@/components/shared/Primitives';
+import { StatusBadge } from '@/components/shared/StatusBadge';
+import { EpisodeActionModal } from '@/features/queue/EpisodeActionModal';
+import type { Episode } from '@/types';
+export function PendingPage(){const {data}=useSuspenseQuery(pendingQuery());const {user}=useAuth();const [search,setSearch]=useState('');const [wait,setWait]=useState('');const [selected,setSelected]=useState<Episode|null>(null);const filtered=data.filter(e=>e.ticket.toLowerCase().includes(search.toLowerCase())&&minutesSince(e.arrivedAt)>=Number(wait));return <><PageHeading eyebrow="EVALUACIÓN PRESENCIAL" title="Pendientes de triage" description="Pacientes registrados que aún no tienen una prioridad clínica asignada."/><section className="data-section"><div className="section-title"><h2>{data.length} pacientes pendientes</h2><Clock3 size={18} className="text-warning"/></div><div className="table-toolbar"><SearchInput value={search} onChange={setSearch}/><select className="filter-select" aria-label="Tiempo esperando" value={wait} onChange={e=>setWait(e.target.value)}><option value="">Todos los tiempos</option><option value="15">Más de 15 minutos</option><option value="30">Más de 30 minutos</option></select></div>{filtered.length?<div className="table-scroll"><table className="clinical-table"><thead><tr><th>Ticket</th><th>Paciente</th><th>Llegada</th><th>Tiempo esperando</th><th>Estado</th><th>Acción</th></tr></thead><tbody>{filtered.map(e=><tr key={e.id}><td className="ticket">{e.ticket}</td><td>{maskedName(e)}</td><td>{time(e.arrivedAt)}</td><td>{minutesSince(e.arrivedAt)} min</td><td><StatusBadge status={e.status}/></td><td>{user&&canAssess(user.role)?<Button size="sm" variant="outline" onClick={()=>setSelected(e)}><ClipboardCheck/>Realizar triage</Button>:<span className="text-muted-foreground">Evaluación por equipo de triage</span>}</td></tr>)}</tbody></table></div>:<Empty/>}</section>{selected&&<EpisodeActionModal episode={selected} action="triage" onClose={()=>setSelected(null)}/>}</>;}

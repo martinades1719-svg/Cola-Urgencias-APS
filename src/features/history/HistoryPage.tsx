@@ -1,0 +1,11 @@
+import { useState } from 'react';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { Eye } from 'lucide-react';
+import { episodesQuery } from '@/api/queries';
+import { Empty, PageHeading, SearchInput } from '@/components/shared/Primitives';
+import { PriorityBadge, StatusBadge } from '@/components/shared/StatusBadge';
+import { Button } from '@/components/ui/button';
+import { EpisodeActionModal } from '@/features/queue/EpisodeActionModal';
+import { time } from '@/utils/clinical';
+import type { Episode } from '@/types';
+export function HistoryPage(){const {data}=useSuspenseQuery(episodesQuery());const [search,setSearch]=useState('');const [status,setStatus]=useState('');const [selected,setSelected]=useState<Episode|null>(null);const filtered=data.filter(e=>e.ticket.toLowerCase().includes(search.toLowerCase())&&(!status||e.status===status));return <><PageHeading title="Historial de episodios" description="Consulta los episodios registrados y sus evaluaciones, estados y cierres."/><section className="data-section"><div className="section-title"><h2>{filtered.length} episodios</h2></div><div className="table-toolbar"><SearchInput value={search} onChange={setSearch}/><select className="filter-select" aria-label="Estado del episodio" value={status} onChange={e=>setStatus(e.target.value)}><option value="">Todos los episodios</option><option value="CLOSED">Atención finalizada</option><option value="WITHDRAWN">Paciente retirado</option><option value="IN_CARE">En atención</option></select></div>{filtered.length?<div className="table-scroll"><table className="clinical-table"><thead><tr><th>Ticket</th><th>Llegada</th><th>Prioridad</th><th>Estado</th><th>Cierre</th><th>Detalle</th></tr></thead><tbody>{filtered.map(e=><tr key={e.id}><td className="ticket">{e.ticket}</td><td>{time(e.arrivedAt)}</td><td><PriorityBadge priority={e.priority}/></td><td><StatusBadge status={e.status}/></td><td>{e.closureReason??'—'}</td><td><Button variant="ghost" size="icon" aria-label={`Ver detalle ${e.ticket}`} onClick={()=>setSelected(e)}><Eye/></Button></td></tr>)}</tbody></table></div>:<Empty/>}</section>{selected&&<EpisodeActionModal episode={selected} action="detail" onClose={()=>setSelected(null)}/>}</>;}

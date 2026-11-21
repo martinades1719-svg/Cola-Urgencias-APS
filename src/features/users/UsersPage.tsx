@@ -1,0 +1,19 @@
+import { useState } from 'react';
+import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { toast } from 'sonner';
+import { Plus, UserCheck, UserX } from 'lucide-react';
+import { usersQuery } from '@/api/queries';
+import { userService } from '@/api';
+import { PageHeading, SearchInput, Empty } from '@/components/shared/Primitives';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { roleLabels } from '@/utils/clinical';
+import { useAuth } from '@/features/auth/AuthProvider';
+import type { Role } from '@/types';
+const schema=z.object({email:z.string().email('Ingresa un correo válido.'),role:z.enum(['RECEPTION','TRIAGE','CLINICAL_MANAGER','ADMIN'])});
+export function UsersPage(){const {data}=useSuspenseQuery(usersQuery());const {user}=useAuth();const [search,setSearch]=useState('');const [open,setOpen]=useState(false);const client=useQueryClient();const form=useForm<z.infer<typeof schema>>({resolver:zodResolver(schema),defaultValues:{email:'',role:'RECEPTION'}});const filtered=data.filter(u=>u.email.toLowerCase().includes(search.toLowerCase()));const create=useMutation({mutationFn:userService.create,onSuccess:()=>{client.invalidateQueries();toast.success('Usuario creado');setOpen(false);form.reset();}});const toggle=useMutation({mutationFn:({id,active}:{id:string;active:boolean})=>userService.status(id,active),onSuccess:()=>{client.invalidateQueries();toast.success('Estado de usuario actualizado');},onError:error=>toast.error(error.message)});
+ return <><PageHeading eyebrow="CONTROL DE ACCESOS" title="Usuarios" description="Cuentas del equipo, roles y estado de acceso. Sin perfiles adicionales." action={<Button onClick={()=>setOpen(true)}><Plus/>Crear usuario</Button>}/><section className="data-section"><div className="section-title"><h2>Equipo del centro</h2><span className="text-xs text-muted-foreground">{data.length} usuarios</span></div><div className="table-toolbar"><SearchInput value={search} onChange={setSearch} placeholder="Buscar por correo…"/></div>{filtered.length?<div className="table-scroll"><table className="clinical-table"><thead><tr><th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{filtered.map(u=><tr key={u.id}><td>{u.email}</td><td>{roleLabels[u.role]}</td><td><span className={`status-badge ${u.active?'status-in_care':''}`}><span/>{u.active?'Activo':'Inactivo'}</span></td><td><Button size="sm" variant="outline" disabled={u.id===user?.id||toggle.isPending} onClick={()=>toggle.mutate({id:u.id,active:!u.active})}>{u.active?<UserX/>:<UserCheck/>}{u.active?'Desactivar':'Activar'}</Button></td></tr>)}</tbody></table></div>:<Empty/>}</section><Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogHeader><DialogTitle>Crear usuario</DialogTitle><DialogDescription>Asigna el correo y el rol del funcionario.</DialogDescription></DialogHeader><form onSubmit={form.handleSubmit(data=>create.mutate(data))}><div className="form-field"><label htmlFor="user-email">Correo electrónico</label><input id="user-email" type="email" {...form.register('email')}/>{form.formState.errors.email&&<span className="field-error">{form.formState.errors.email.message}</span>}</div><div className="form-field"><label htmlFor="user-role">Rol</label><select id="user-role" {...form.register('role')}>{(Object.keys(roleLabels) as Role[]).map(role=><option key={role} value={role}>{roleLabels[role]}</option>)}</select></div>{create.error&&<p className="field-error mb-3">{create.error.message}</p>}<Button className="w-full" disabled={create.isPending}><Plus/>Crear usuario</Button></form></DialogContent></Dialog></>;
+}
