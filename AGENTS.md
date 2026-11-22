@@ -28,3 +28,10 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Application architecture
+- Keep TanStack Start file-based routing with a pathless staff layout; it preserves the platform bootstrap and centralizes client-side session gating.
+- UI components access data only through `src/api`; mock adapters and REST requests share contracts to allow replacing the demo with FastAPI.
+- Keep simulated auth and mutations browser-side, and enforce demo permissions in both UI and the mock adapter; FastAPI must independently enforce authorization in production.
+- Public status responses must be explicit minimal DTOs, never full episodes; this prevents exposing patient identifiers or other patients' clinical data.
+- Use browser session storage only for the demo account identifier; clinical demo state is ephemeral and never contains real data.

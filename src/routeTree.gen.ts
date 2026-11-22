@@ -10,33 +10,193 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as StaffRouteImport } from './routes/_staff'
+import { Route as AccesoRouteImport } from './routes/acceso'
+import { Route as AccesoDenegadoRouteImport } from './routes/acceso-denegado'
+import { Route as MiTicketRouteImport } from './routes/mi-ticket'
+import { Route as RegistrarRouteImport } from './routes/registrar'
+import { Route as StaffAlertasRouteImport } from './routes/_staff.alertas'
+import { Route as StaffAuditoriaRouteImport } from './routes/_staff.auditoria'
+import { Route as StaffColaRouteImport } from './routes/_staff.cola'
+import { Route as StaffHistorialRouteImport } from './routes/_staff.historial'
+import { Route as StaffIndicadoresRouteImport } from './routes/_staff.indicadores'
+import { Route as StaffPendientesRouteImport } from './routes/_staff.pendientes'
+import { Route as StaffResumenRouteImport } from './routes/_staff.resumen'
+import { Route as StaffUsuariosRouteImport } from './routes/_staff.usuarios'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StaffRoute = StaffRouteImport.update({
+  id: '/_staff',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccesoRoute = AccesoRouteImport.update({
+  id: '/acceso',
+  path: '/acceso',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccesoDenegadoRoute = AccesoDenegadoRouteImport.update({
+  id: '/acceso-denegado',
+  path: '/acceso-denegado',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MiTicketRoute = MiTicketRouteImport.update({
+  id: '/mi-ticket',
+  path: '/mi-ticket',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegistrarRoute = RegistrarRouteImport.update({
+  id: '/registrar',
+  path: '/registrar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StaffAlertasRoute = StaffAlertasRouteImport.update({
+  id: '/alertas',
+  path: '/alertas',
+  getParentRoute: () => StaffRoute,
+} as any)
+const StaffAuditoriaRoute = StaffAuditoriaRouteImport.update({
+  id: '/auditoria',
+  path: '/auditoria',
+  getParentRoute: () => StaffRoute,
+} as any)
+const StaffColaRoute = StaffColaRouteImport.update({
+  id: '/cola',
+  path: '/cola',
+  getParentRoute: () => StaffRoute,
+} as any)
+const StaffHistorialRoute = StaffHistorialRouteImport.update({
+  id: '/historial',
+  path: '/historial',
+  getParentRoute: () => StaffRoute,
+} as any)
+const StaffIndicadoresRoute = StaffIndicadoresRouteImport.update({
+  id: '/indicadores',
+  path: '/indicadores',
+  getParentRoute: () => StaffRoute,
+} as any)
+const StaffPendientesRoute = StaffPendientesRouteImport.update({
+  id: '/pendientes',
+  path: '/pendientes',
+  getParentRoute: () => StaffRoute,
+} as any)
+const StaffResumenRoute = StaffResumenRouteImport.update({
+  id: '/resumen',
+  path: '/resumen',
+  getParentRoute: () => StaffRoute,
+} as any)
+const StaffUsuariosRoute = StaffUsuariosRouteImport.update({
+  id: '/usuarios',
+  path: '/usuarios',
+  getParentRoute: () => StaffRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/acceso': typeof AccesoRoute
+  '/acceso-denegado': typeof AccesoDenegadoRoute
+  '/mi-ticket': typeof MiTicketRoute
+  '/registrar': typeof RegistrarRoute
+  '/alertas': typeof StaffAlertasRoute
+  '/auditoria': typeof StaffAuditoriaRoute
+  '/cola': typeof StaffColaRoute
+  '/historial': typeof StaffHistorialRoute
+  '/indicadores': typeof StaffIndicadoresRoute
+  '/pendientes': typeof StaffPendientesRoute
+  '/resumen': typeof StaffResumenRoute
+  '/usuarios': typeof StaffUsuariosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/acceso': typeof AccesoRoute
+  '/acceso-denegado': typeof AccesoDenegadoRoute
+  '/mi-ticket': typeof MiTicketRoute
+  '/registrar': typeof RegistrarRoute
+  '/alertas': typeof StaffAlertasRoute
+  '/auditoria': typeof StaffAuditoriaRoute
+  '/cola': typeof StaffColaRoute
+  '/historial': typeof StaffHistorialRoute
+  '/indicadores': typeof StaffIndicadoresRoute
+  '/pendientes': typeof StaffPendientesRoute
+  '/resumen': typeof StaffResumenRoute
+  '/usuarios': typeof StaffUsuariosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_staff': typeof StaffRouteWithChildren
+  '/acceso': typeof AccesoRoute
+  '/acceso-denegado': typeof AccesoDenegadoRoute
+  '/mi-ticket': typeof MiTicketRoute
+  '/registrar': typeof RegistrarRoute
+  '/_staff/alertas': typeof StaffAlertasRoute
+  '/_staff/auditoria': typeof StaffAuditoriaRoute
+  '/_staff/cola': typeof StaffColaRoute
+  '/_staff/historial': typeof StaffHistorialRoute
+  '/_staff/indicadores': typeof StaffIndicadoresRoute
+  '/_staff/pendientes': typeof StaffPendientesRoute
+  '/_staff/resumen': typeof StaffResumenRoute
+  '/_staff/usuarios': typeof StaffUsuariosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/acceso'
+    | '/acceso-denegado'
+    | '/mi-ticket'
+    | '/registrar'
+    | '/alertas'
+    | '/auditoria'
+    | '/cola'
+    | '/historial'
+    | '/indicadores'
+    | '/pendientes'
+    | '/resumen'
+    | '/usuarios'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/acceso'
+    | '/acceso-denegado'
+    | '/mi-ticket'
+    | '/registrar'
+    | '/alertas'
+    | '/auditoria'
+    | '/cola'
+    | '/historial'
+    | '/indicadores'
+    | '/pendientes'
+    | '/resumen'
+    | '/usuarios'
+  id:
+    | '__root__'
+    | '/'
+    | '/_staff'
+    | '/acceso'
+    | '/acceso-denegado'
+    | '/mi-ticket'
+    | '/registrar'
+    | '/_staff/alertas'
+    | '/_staff/auditoria'
+    | '/_staff/cola'
+    | '/_staff/historial'
+    | '/_staff/indicadores'
+    | '/_staff/pendientes'
+    | '/_staff/resumen'
+    | '/_staff/usuarios'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  StaffRoute: typeof StaffRouteWithChildren
+  AccesoRoute: typeof AccesoRoute
+  AccesoDenegadoRoute: typeof AccesoDenegadoRoute
+  MiTicketRoute: typeof MiTicketRoute
+  RegistrarRoute: typeof RegistrarRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +208,131 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_staff': {
+      id: '/_staff'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof StaffRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/acceso': {
+      id: '/acceso'
+      path: '/acceso'
+      fullPath: '/acceso'
+      preLoaderRoute: typeof AccesoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/acceso-denegado': {
+      id: '/acceso-denegado'
+      path: '/acceso-denegado'
+      fullPath: '/acceso-denegado'
+      preLoaderRoute: typeof AccesoDenegadoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mi-ticket': {
+      id: '/mi-ticket'
+      path: '/mi-ticket'
+      fullPath: '/mi-ticket'
+      preLoaderRoute: typeof MiTicketRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/registrar': {
+      id: '/registrar'
+      path: '/registrar'
+      fullPath: '/registrar'
+      preLoaderRoute: typeof RegistrarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_staff/alertas': {
+      id: '/_staff/alertas'
+      path: '/alertas'
+      fullPath: '/alertas'
+      preLoaderRoute: typeof StaffAlertasRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/_staff/auditoria': {
+      id: '/_staff/auditoria'
+      path: '/auditoria'
+      fullPath: '/auditoria'
+      preLoaderRoute: typeof StaffAuditoriaRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/_staff/cola': {
+      id: '/_staff/cola'
+      path: '/cola'
+      fullPath: '/cola'
+      preLoaderRoute: typeof StaffColaRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/_staff/historial': {
+      id: '/_staff/historial'
+      path: '/historial'
+      fullPath: '/historial'
+      preLoaderRoute: typeof StaffHistorialRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/_staff/indicadores': {
+      id: '/_staff/indicadores'
+      path: '/indicadores'
+      fullPath: '/indicadores'
+      preLoaderRoute: typeof StaffIndicadoresRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/_staff/pendientes': {
+      id: '/_staff/pendientes'
+      path: '/pendientes'
+      fullPath: '/pendientes'
+      preLoaderRoute: typeof StaffPendientesRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/_staff/resumen': {
+      id: '/_staff/resumen'
+      path: '/resumen'
+      fullPath: '/resumen'
+      preLoaderRoute: typeof StaffResumenRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/_staff/usuarios': {
+      id: '/_staff/usuarios'
+      path: '/usuarios'
+      fullPath: '/usuarios'
+      preLoaderRoute: typeof StaffUsuariosRouteImport
+      parentRoute: typeof StaffRoute
+    }
   }
 }
 
+interface StaffRouteChildren {
+  StaffAlertasRoute: typeof StaffAlertasRoute
+  StaffAuditoriaRoute: typeof StaffAuditoriaRoute
+  StaffColaRoute: typeof StaffColaRoute
+  StaffHistorialRoute: typeof StaffHistorialRoute
+  StaffIndicadoresRoute: typeof StaffIndicadoresRoute
+  StaffPendientesRoute: typeof StaffPendientesRoute
+  StaffResumenRoute: typeof StaffResumenRoute
+  StaffUsuariosRoute: typeof StaffUsuariosRoute
+}
+
+const StaffRouteChildren: StaffRouteChildren = {
+  StaffAlertasRoute: StaffAlertasRoute,
+  StaffAuditoriaRoute: StaffAuditoriaRoute,
+  StaffColaRoute: StaffColaRoute,
+  StaffHistorialRoute: StaffHistorialRoute,
+  StaffIndicadoresRoute: StaffIndicadoresRoute,
+  StaffPendientesRoute: StaffPendientesRoute,
+  StaffResumenRoute: StaffResumenRoute,
+  StaffUsuariosRoute: StaffUsuariosRoute,
+}
+
+const StaffRouteWithChildren = StaffRoute._addFileChildren(StaffRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  StaffRoute: StaffRouteWithChildren,
+  AccesoRoute: AccesoRoute,
+  AccesoDenegadoRoute: AccesoDenegadoRoute,
+  MiTicketRoute: MiTicketRoute,
+  RegistrarRoute: RegistrarRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
