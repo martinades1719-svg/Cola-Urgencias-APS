@@ -30,3 +30,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Variables privadas
+.env
+
+# Entorno virtual y cache de Python
+backend/.venv/
+backend/__pycache__/
+*.pyc

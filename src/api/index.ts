@@ -28,3 +28,4 @@ export const auditService={list:()=>USE_MOCKS?mockApi.audit():get<AuditLog[]>('/
 export const userService={list:()=>USE_MOCKS?mockApi.users():get<User[]>('/api/users'),create:(input:{email:string;role:Role})=>USE_MOCKS?mockApi.createUser(input):post<User>('/api/users',input),status:(id:string,active:boolean)=>USE_MOCKS?mockApi.userStatus(id,active):http<ApiResponse<User>>(`/api/users/${id}/status`,'PATCH',{active}).then(r=>r.data)};
 export const settingsService={threshold:(value?:number)=>USE_MOCKS?mockApi.threshold(value):Promise.reject(new Error('La configuración requiere un endpoint adicional en FastAPI.'))};
 export { USE_MOCKS };
+export * from './health';
