@@ -1,10 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+
+from database import engine
 
 app = FastAPI(
     title="Cola Urgencias APS API",
     description="API del sistema de gestión de cola priorizada",
-    version="0.1.0",
+    version="0.2.0",
 )
 
 app.add_middleware(
@@ -29,5 +33,31 @@ def health_check():
     return {
         "status": "healthy",
         "service": "cola-urgencias-api",
-        "version": "0.1.0",
+        "version": "0.2.0",
     }
+
+
+@app.get("/database-health")
+def database_health():
+    try:
+        with engine.connect() as connection:
+            database_name = connection.execute(
+                text("SELECT current_database()")
+            ).scalar_one()
+
+            database_user = connection.execute(
+                text("SELECT current_user")
+            ).scalar_one()
+
+        return {
+            "status": "healthy",
+            "database": database_name,
+            "user": database_user,
+        }
+
+    except SQLAlchemyError:
+        return {
+            "status": "unhealthy",
+            "database": None,
+            "user": None,
+        }
