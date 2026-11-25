@@ -361,21 +361,21 @@ export const episodeService = {
 
 
 export const queueService = {
-  list: () =>
-    USE_MOCKS
-      ? mockApi.queue()
-      : get<QueueItem[]>(
-          '/api/queue',
-        ),
+  /*
+   * La cola clínica y las posiciones utilizan
+   * FastAPI y PostgreSQL de forma permanente.
+   */
+  list: (): Promise<QueueItem[]> =>
+    get<QueueItem[]>(
+      '/api/queue',
+    ),
 
   position: (
     id: string,
-  ) =>
-    USE_MOCKS
-      ? mockApi.position(id)
-      : get<QueuePosition>(
-          `/api/queue/${id}/position`,
-        ),
+  ): Promise<QueuePosition> =>
+    get<QueuePosition>(
+      `/api/queue/${id}/position`,
+    ),
 };
 
 

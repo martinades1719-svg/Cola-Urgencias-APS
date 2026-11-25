@@ -20,6 +20,12 @@ from schemas.public import (
     ArrivalResponse,
     PublicStatusDataResponse,
     PublicStatusResponse,
+)
+
+from schemas.queue import (
+    QueueItemResponse,
+    QueueListDataResponse,
+    QueuePositionDataResponse,
     QueuePositionResponse,
     WaitEstimateResponse,
 )
@@ -37,6 +43,9 @@ __all__ = [
     "PatientEpisodeResponse",
     "PublicStatusDataResponse",
     "PublicStatusResponse",
+    "QueueItemResponse",
+    "QueueListDataResponse",
+    "QueuePositionDataResponse",
     "QueuePositionResponse",
     "RoleResponse",
     "TokenResponse",
