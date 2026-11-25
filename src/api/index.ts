@@ -230,30 +230,34 @@ export const authService = {
 
 
 export const publicService = {
+  /*
+   * Registro y consulta pública utilizan siempre FastAPI.
+   * Los módulos internos continúan con mocks temporalmente.
+   */
   arrival: (
     input: ArrivalInput,
-  ) =>
-    USE_MOCKS
-      ? mockApi.arrival(input)
-      : post<{
-          ticket: string;
-          token: string;
-          arrivedAt: string;
-        }>(
-          '/api/public/arrival',
-          input,
-        ),
+  ): Promise<{
+    ticket: string;
+    token: string;
+    arrivedAt: string;
+  }> =>
+    post<{
+      ticket: string;
+      token: string;
+      arrivedAt: string;
+    }>(
+      '/api/public/arrival',
+      input,
+    ),
 
   status: (
     token: string,
-  ) =>
-    USE_MOCKS
-      ? mockApi.publicStatus(token)
-      : get<PublicStatus>(
-          `/api/public/status/${
-            encodeURIComponent(token)
-          }`,
-        ),
+  ): Promise<PublicStatus> =>
+    get<PublicStatus>(
+      `/api/public/status/${encodeURIComponent(
+        token.trim(),
+      )}`,
+    ),
 };
 
 

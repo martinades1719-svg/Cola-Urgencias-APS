@@ -4,13 +4,14 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from api.auth import router as auth_router
+from api.public import router as public_router
 from database import engine
 
 
 app = FastAPI(
     title="Cola Urgencias APS API",
     description="API del sistema de gestión de cola priorizada",
-    version="0.3.0",
+    version="0.4.0",
 )
 
 app.add_middleware(
@@ -21,7 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth_router)
+app.include_router(public_router)
 
 
 @app.get("/")
