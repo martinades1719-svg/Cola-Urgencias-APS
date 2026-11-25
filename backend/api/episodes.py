@@ -1,0 +1,273 @@
+from datetime import datetime
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.orm import Session, selectinload
+
+from database import get_db
+from models import Assessment, Episode, User
+from schemas import (
+    AssessmentResponse,
+    EpisodeDataResponse,
+    EpisodeListDataResponse,
+    EpisodeResponse,
+    PatientEpisodeResponse,
+    TriageRequest,
+)
+from security import get_current_user
+
+
+router = APIRouter(
+    prefix="/api/episodes",
+    tags=["Episodes"],
+)
+
+
+QUEUE_ROLES = {
+    "RECEPTION",
+    "TRIAGE",
+    "CLINICAL_MANAGER",
+}
+
+
+CLINICAL_ROLES = {
+    "TRIAGE",
+    "CLINICAL_MANAGER",
+}
+
+
+def require_queue_role(
+    current_user: User,
+) -> None:
+    if current_user.role.name not in QUEUE_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permiso para consultar la cola clínica.",
+        )
+
+
+def require_clinical_role(
+    current_user: User,
+) -> None:
+    if current_user.role.name not in CLINICAL_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo el personal clínico puede registrar un triage.",
+        )
+
+
+def load_episode(
+    database: Session,
+    episode_id: UUID,
+) -> Episode | None:
+    statement = (
+        select(Episode)
+        .options(
+            selectinload(Episode.patient),
+            selectinload(Episode.assessments),
+        )
+        .where(
+            Episode.id == episode_id
+        )
+    )
+
+    return database.scalar(statement)
+
+
+def serialize_assessment(
+    assessment: Assessment,
+) -> AssessmentResponse:
+    return AssessmentResponse(
+        id=assessment.id,
+        priority=assessment.priority,
+        observation=assessment.observation,
+        createdAt=assessment.assessed_at,
+        userId=assessment.assessed_by,
+    )
+
+
+def serialize_episode(
+    episode: Episode,
+) -> EpisodeResponse:
+    updated_at = (
+        episode.triage_at
+        or episode.called_at
+        or episode.care_started_at
+        or episode.closed_at
+        or episode.arrived_at
+    )
+
+    initial_assessments = [
+        serialize_assessment(assessment)
+        for assessment in episode.assessments
+        if assessment.assessment_type == "INITIAL"
+    ]
+
+    reassessments = [
+        serialize_assessment(assessment)
+        for assessment in episode.assessments
+        if assessment.assessment_type == "REASSESSMENT"
+    ]
+
+    return EpisodeResponse(
+        id=episode.id,
+        ticket=episode.ticket,
+        token="",
+        patient=PatientEpisodeResponse(
+            id=episode.patient.id,
+            document=episode.patient.document,
+            firstName=episode.patient.first_name,
+            lastName=episode.patient.last_name,
+            birthDate=episode.patient.birth_date,
+        ),
+        status=episode.status,
+        priority=episode.current_priority,
+        arrivedAt=episode.arrived_at,
+        updatedAt=updated_at,
+        triageAt=episode.triage_at,
+        calledAt=episode.called_at,
+        box=episode.box,
+        assessments=initial_assessments,
+        reassessments=reassessments,
+        closureReason=episode.closure_reason,
+        closedAt=episode.closed_at,
+        closedBy=None,
+    )
+
+
+@router.get(
+    "/pending-triage",
+    response_model=EpisodeListDataResponse,
+)
+def list_pending_triage(
+    database: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> EpisodeListDataResponse:
+    require_queue_role(
+        current_user
+    )
+
+    statement = (
+        select(Episode)
+        .options(
+            selectinload(Episode.patient),
+            selectinload(Episode.assessments),
+        )
+        .where(
+            Episode.status ==
+            "PENDING_TRIAGE"
+        )
+        .order_by(
+            Episode.arrived_at.asc()
+        )
+    )
+
+    episodes = list(
+        database.scalars(statement)
+    )
+
+    return EpisodeListDataResponse(
+        data=[
+            serialize_episode(episode)
+            for episode in episodes
+        ],
+    )
+
+
+@router.post(
+    "/{episode_id}/triage",
+    response_model=EpisodeDataResponse,
+)
+def register_initial_triage(
+    episode_id: UUID,
+    request: TriageRequest,
+    database: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> EpisodeDataResponse:
+    require_clinical_role(
+        current_user
+    )
+
+    episode = load_episode(
+        database,
+        episode_id,
+    )
+
+    if episode is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No encontramos el episodio solicitado.",
+        )
+
+    if (
+        episode.status !=
+        "PENDING_TRIAGE"
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Este episodio ya posee un triage o no se encuentra pendiente.",
+        )
+
+    existing_initial_assessment = database.scalar(
+        select(Assessment.id)
+        .where(
+            Assessment.episode_id ==
+            episode.id
+        )
+        .where(
+            Assessment.assessment_type ==
+            "INITIAL"
+        )
+    )
+
+    if existing_initial_assessment is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Este episodio ya posee un triage inicial.",
+        )
+
+    assessment = Assessment(
+        episode_id=episode.id,
+        assessed_by=current_user.id,
+        assessment_type="INITIAL",
+        priority=request.priority,
+        previous_priority=None,
+        observation=request.observation.strip(),
+        change_reason=None,
+    )
+
+    database.add(assessment)
+
+    current_time = datetime.now().astimezone()
+
+    episode.current_priority = (
+        request.priority
+    )
+
+    episode.triage_at = current_time
+    episode.status = "WAITING"
+
+    try:
+        database.commit()
+
+    except Exception:
+        database.rollback()
+        raise
+
+    refreshed_episode = load_episode(
+        database,
+        episode.id,
+    )
+
+    if refreshed_episode is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="No fue posible recuperar el episodio actualizado.",
+        )
+
+    return EpisodeDataResponse(
+        data=serialize_episode(
+            refreshed_episode
+        ),
+    )

@@ -4,7 +4,7 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 from database import Base
-from models import Episode, Patient, Role, User
+from models import Assessment, Episode, Patient, Role, User
 from settings import settings
 
 

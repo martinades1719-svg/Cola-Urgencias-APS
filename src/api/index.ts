@@ -260,14 +260,17 @@ export const publicService = {
     ),
 };
 
-
 export const episodeService = {
+  /*
+   * Pendientes y triage utilizan FastAPI y PostgreSQL.
+   * Las demás operaciones continúan temporalmente
+   * con datos simulados.
+   */
+
   list: () =>
     USE_MOCKS
       ? mockApi.episodes()
-      : get<Episode[]>(
-          '/api/episodes',
-        ),
+      : get<Episode[]>('/api/episodes'),
 
   detail: (
     id: string,
@@ -278,36 +281,26 @@ export const episodeService = {
           `/api/episodes/${id}`,
         ),
 
-  pending: () =>
-    USE_MOCKS
-      ? mockApi.pending()
-      : get<Episode[]>(
-          '/api/episodes/pending-triage',
-        ),
+  pending: (): Promise<Episode[]> =>
+    get<Episode[]>(
+      '/api/episodes/pending-triage',
+    ),
 
   triage: (
     id: string,
     input: AssessmentInput,
-  ) =>
-    USE_MOCKS
-      ? mockApi.triage(
-          id,
-          input,
-        )
-      : post<Episode>(
-          `/api/episodes/${id}/triage`,
-          input,
-        ),
+  ): Promise<Episode> =>
+    post<Episode>(
+      `/api/episodes/${id}/triage`,
+      input,
+    ),
 
   reassess: (
     id: string,
     input: AssessmentInput,
   ) =>
     USE_MOCKS
-      ? mockApi.reassess(
-          id,
-          input,
-        )
+      ? mockApi.reassess(id, input)
       : post<Episode>(
           `/api/episodes/${id}/reassessments`,
           input,

@@ -5,6 +5,15 @@ from schemas.auth import (
     UserResponse,
 )
 
+from schemas.episode import (
+    AssessmentResponse,
+    EpisodeDataResponse,
+    EpisodeListDataResponse,
+    EpisodeResponse,
+    PatientEpisodeResponse,
+    TriageRequest,
+)
+
 from schemas.public import (
     ArrivalDataResponse,
     ArrivalRequest,
@@ -20,12 +29,18 @@ __all__ = [
     "ArrivalDataResponse",
     "ArrivalRequest",
     "ArrivalResponse",
+    "AssessmentResponse",
+    "EpisodeDataResponse",
+    "EpisodeListDataResponse",
+    "EpisodeResponse",
     "LoginRequest",
+    "PatientEpisodeResponse",
     "PublicStatusDataResponse",
     "PublicStatusResponse",
     "QueuePositionResponse",
     "RoleResponse",
     "TokenResponse",
+    "TriageRequest",
     "UserResponse",
     "WaitEstimateResponse",
 ]

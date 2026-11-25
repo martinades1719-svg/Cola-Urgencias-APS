@@ -17,6 +17,7 @@ from database import Base
 
 
 if TYPE_CHECKING:
+    from models.assessment import Assessment
     from models.patient import Patient
     from models.user import User
 
@@ -37,6 +38,13 @@ class Episode(Base):
             )
             """,
             name="ck_episodes_valid_status",
+        ),
+        CheckConstraint(
+            """
+            current_priority IS NULL OR
+            current_priority IN ('C1', 'C2', 'C3', 'C4', 'C5')
+            """,
+            name="ck_episodes_valid_priority",
         ),
     )
 
@@ -85,6 +93,12 @@ class Episode(Base):
         index=True,
     )
 
+    current_priority: Mapped[str | None] = mapped_column(
+        String(2),
+        nullable=True,
+        index=True,
+    )
+
     arrived_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -126,3 +140,9 @@ class Episode(Base):
     )
 
     creator: Mapped["User | None"] = relationship()
+
+    assessments: Mapped[list["Assessment"]] = relationship(
+        back_populates="episode",
+        cascade="all, delete-orphan",
+        order_by="Assessment.assessed_at",
+    )

@@ -4,6 +4,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from api.auth import router as auth_router
+from api.episodes import router as episodes_router
 from api.public import router as public_router
 from database import engine
 
@@ -22,7 +23,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router)
 app.include_router(public_router)
+app.include_router(episodes_router)
 
 
 @app.get("/")
