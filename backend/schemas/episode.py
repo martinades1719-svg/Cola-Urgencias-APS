@@ -24,6 +24,28 @@ class TriageRequest(BaseModel):
     )
 
 
+class CallEpisodeRequest(BaseModel):
+    box: str = Field(
+        min_length=1,
+        max_length=30,
+    )
+
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+
+
+class CloseEpisodeRequest(BaseModel):
+    reason: str = Field(
+        min_length=2,
+        max_length=500,
+    )
+
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+
+
 class PatientEpisodeResponse(BaseModel):
     id: UUID
     document: str

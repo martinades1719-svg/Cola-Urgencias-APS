@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -9,6 +9,8 @@ from database import get_db
 from models import Assessment, Episode, User
 from schemas import (
     AssessmentResponse,
+    CallEpisodeRequest,
+    CloseEpisodeRequest,
     EpisodeDataResponse,
     EpisodeListDataResponse,
     EpisodeResponse,
@@ -37,6 +39,19 @@ CLINICAL_ROLES = {
 }
 
 
+OPERATIVE_ROLES = {
+    "RECEPTION",
+    "TRIAGE",
+    "CLINICAL_MANAGER",
+}
+
+
+WITHDRAWAL_REASONS = {
+    "Retiro voluntario",
+    "Abandono",
+}
+
+
 def require_queue_role(
     current_user: User,
 ) -> None:
@@ -54,6 +69,16 @@ def require_clinical_role(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Solo el personal clínico puede registrar un triage.",
+        )
+
+
+def require_operative_role(
+    current_user: User,
+) -> None:
+    if current_user.role.name not in OPERATIVE_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permiso para modificar el estado del episodio.",
         )
 
 
@@ -91,10 +116,10 @@ def serialize_episode(
     episode: Episode,
 ) -> EpisodeResponse:
     updated_at = (
-        episode.triage_at
-        or episode.called_at
+        episode.closed_at
         or episode.care_started_at
-        or episode.closed_at
+        or episode.called_at
+        or episode.triage_at
         or episode.arrived_at
     )
 
@@ -136,6 +161,30 @@ def serialize_episode(
     )
 
 
+def commit_and_reload(
+    database: Session,
+    episode: Episode,
+) -> Episode:
+    try:
+        database.commit()
+    except Exception:
+        database.rollback()
+        raise
+
+    refreshed_episode = load_episode(
+        database,
+        episode.id,
+    )
+
+    if refreshed_episode is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="No fue posible recuperar el episodio actualizado.",
+        )
+
+    return refreshed_episode
+
+
 @router.get(
     "/pending-triage",
     response_model=EpisodeListDataResponse,
@@ -144,9 +193,7 @@ def list_pending_triage(
     database: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> EpisodeListDataResponse:
-    require_queue_role(
-        current_user
-    )
+    require_queue_role(current_user)
 
     statement = (
         select(Episode)
@@ -155,8 +202,7 @@ def list_pending_triage(
             selectinload(Episode.assessments),
         )
         .where(
-            Episode.status ==
-            "PENDING_TRIAGE"
+            Episode.status == "PENDING_TRIAGE"
         )
         .order_by(
             Episode.arrived_at.asc()
@@ -185,9 +231,7 @@ def register_initial_triage(
     database: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> EpisodeDataResponse:
-    require_clinical_role(
-        current_user
-    )
+    require_clinical_role(current_user)
 
     episode = load_episode(
         database,
@@ -200,10 +244,7 @@ def register_initial_triage(
             detail="No encontramos el episodio solicitado.",
         )
 
-    if (
-        episode.status !=
-        "PENDING_TRIAGE"
-    ):
+    if episode.status != "PENDING_TRIAGE":
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Este episodio ya posee un triage o no se encuentra pendiente.",
@@ -212,12 +253,10 @@ def register_initial_triage(
     existing_initial_assessment = database.scalar(
         select(Assessment.id)
         .where(
-            Assessment.episode_id ==
-            episode.id
+            Assessment.episode_id == episode.id
         )
         .where(
-            Assessment.assessment_type ==
-            "INITIAL"
+            Assessment.assessment_type == "INITIAL"
         )
     )
 
@@ -239,32 +278,168 @@ def register_initial_triage(
 
     database.add(assessment)
 
-    current_time = datetime.now().astimezone()
+    current_time = datetime.now(UTC)
 
-    episode.current_priority = (
-        request.priority
-    )
-
+    episode.current_priority = request.priority
     episode.triage_at = current_time
     episode.status = "WAITING"
 
-    try:
-        database.commit()
-
-    except Exception:
-        database.rollback()
-        raise
-
-    refreshed_episode = load_episode(
+    refreshed_episode = commit_and_reload(
         database,
-        episode.id,
+        episode,
     )
 
-    if refreshed_episode is None:
+    return EpisodeDataResponse(
+        data=serialize_episode(
+            refreshed_episode
+        ),
+    )
+
+
+@router.post(
+    "/{episode_id}/call",
+    response_model=EpisodeDataResponse,
+)
+def call_episode(
+    episode_id: UUID,
+    request: CallEpisodeRequest,
+    database: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> EpisodeDataResponse:
+    require_operative_role(current_user)
+
+    episode = load_episode(
+        database,
+        episode_id,
+    )
+
+    if episode is None:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="No fue posible recuperar el episodio actualizado.",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No encontramos el episodio solicitado.",
         )
+
+    if episode.status != "WAITING":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Solo se puede llamar a un paciente que se encuentra en espera.",
+        )
+
+    episode.status = "CALLED"
+    episode.box = request.box.strip()
+    episode.called_at = datetime.now(UTC)
+
+    refreshed_episode = commit_and_reload(
+        database,
+        episode,
+    )
+
+    return EpisodeDataResponse(
+        data=serialize_episode(
+            refreshed_episode
+        ),
+    )
+
+
+@router.post(
+    "/{episode_id}/start-care",
+    response_model=EpisodeDataResponse,
+)
+def start_episode_care(
+    episode_id: UUID,
+    database: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> EpisodeDataResponse:
+    require_operative_role(current_user)
+
+    episode = load_episode(
+        database,
+        episode_id,
+    )
+
+    if episode is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No encontramos el episodio solicitado.",
+        )
+
+    if episode.status != "CALLED":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Solo se puede iniciar la atención de un paciente llamado.",
+        )
+
+    episode.status = "IN_CARE"
+    episode.care_started_at = datetime.now(UTC)
+
+    refreshed_episode = commit_and_reload(
+        database,
+        episode,
+    )
+
+    return EpisodeDataResponse(
+        data=serialize_episode(
+            refreshed_episode
+        ),
+    )
+
+
+@router.post(
+    "/{episode_id}/close",
+    response_model=EpisodeDataResponse,
+)
+def close_episode(
+    episode_id: UUID,
+    request: CloseEpisodeRequest,
+    database: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> EpisodeDataResponse:
+    require_operative_role(current_user)
+
+    episode = load_episode(
+        database,
+        episode_id,
+    )
+
+    if episode is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No encontramos el episodio solicitado.",
+        )
+
+    valid_states = {
+        "PENDING_TRIAGE",
+        "WAITING",
+        "CALLED",
+        "IN_CARE",
+    }
+
+    if episode.status not in valid_states:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="El episodio ya se encuentra cerrado.",
+        )
+
+    normalized_reason = request.reason.strip()
+
+    if normalized_reason in WITHDRAWAL_REASONS:
+        episode.status = "WITHDRAWN"
+    else:
+        if episode.status != "IN_CARE":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="La atención solo puede finalizar cuando el paciente está en atención.",
+            )
+
+        episode.status = "CLOSED"
+
+    episode.closure_reason = normalized_reason
+    episode.closed_at = datetime.now(UTC)
+
+    refreshed_episode = commit_and_reload(
+        database,
+        episode,
+    )
 
     return EpisodeDataResponse(
         data=serialize_episode(

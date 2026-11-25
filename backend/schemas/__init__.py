@@ -7,6 +7,8 @@ from schemas.auth import (
 
 from schemas.episode import (
     AssessmentResponse,
+    CallEpisodeRequest,
+    CloseEpisodeRequest,
     EpisodeDataResponse,
     EpisodeListDataResponse,
     EpisodeResponse,
@@ -36,6 +38,8 @@ __all__ = [
     "ArrivalRequest",
     "ArrivalResponse",
     "AssessmentResponse",
+    "CallEpisodeRequest",
+    "CloseEpisodeRequest",
     "EpisodeDataResponse",
     "EpisodeListDataResponse",
     "EpisodeResponse",

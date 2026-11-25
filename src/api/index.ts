@@ -261,12 +261,6 @@ export const publicService = {
 };
 
 export const episodeService = {
-  /*
-   * Pendientes y triage utilizan FastAPI y PostgreSQL.
-   * Las demás operaciones continúan temporalmente
-   * con datos simulados.
-   */
-
   list: () =>
     USE_MOCKS
       ? mockApi.episodes()
@@ -309,54 +303,31 @@ export const episodeService = {
   call: (
     id: string,
     box: string,
-  ) =>
-    USE_MOCKS
-      ? mockApi.transition(
-          id,
-          'CALLED',
-          box,
-        )
-      : post<Episode>(
-          `/api/episodes/${id}/call`,
-          {
-            box,
-          },
-        ),
+  ): Promise<Episode> =>
+    post<Episode>(
+      `/api/episodes/${id}/call`,
+      {
+        box,
+      },
+    ),
 
   startCare: (
     id: string,
-  ) =>
-    USE_MOCKS
-      ? mockApi.transition(
-          id,
-          'IN_CARE',
-          '',
-        )
-      : post<Episode>(
-          `/api/episodes/${id}/start-care`,
-        ),
+  ): Promise<Episode> =>
+    post<Episode>(
+      `/api/episodes/${id}/start-care`,
+    ),
 
   close: (
     id: string,
     reason: string,
-  ) =>
-    USE_MOCKS
-      ? mockApi.transition(
-          id,
-          [
-            'Retiro voluntario',
-            'Abandono',
-          ].includes(reason)
-            ? 'WITHDRAWN'
-            : 'CLOSED',
-          reason,
-        )
-      : post<Episode>(
-          `/api/episodes/${id}/close`,
-          {
-            reason,
-          },
-        ),
+  ): Promise<Episode> =>
+    post<Episode>(
+      `/api/episodes/${id}/close`,
+      {
+        reason,
+      },
+    ),
 };
 
 
