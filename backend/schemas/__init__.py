@@ -13,6 +13,8 @@ from schemas.episode import (
     EpisodeListDataResponse,
     EpisodeResponse,
     PatientEpisodeResponse,
+    ReassessmentRequest,
+    ReassessmentResponse,
     TriageRequest,
 )
 
@@ -51,6 +53,8 @@ __all__ = [
     "QueueListDataResponse",
     "QueuePositionDataResponse",
     "QueuePositionResponse",
+    "ReassessmentRequest",
+    "ReassessmentResponse",
     "RoleResponse",
     "TokenResponse",
     "TriageRequest",
