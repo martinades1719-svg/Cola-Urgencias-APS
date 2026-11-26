@@ -1,3 +1,8 @@
+from schemas.audit import (
+    AuditLogListResponse,
+    AuditLogResponse,
+)
+
 from schemas.auth import (
     LoginRequest,
     RoleResponse,
@@ -40,6 +45,8 @@ __all__ = [
     "ArrivalRequest",
     "ArrivalResponse",
     "AssessmentResponse",
+    "AuditLogListResponse",
+    "AuditLogResponse",
     "CallEpisodeRequest",
     "CloseEpisodeRequest",
     "EpisodeDataResponse",

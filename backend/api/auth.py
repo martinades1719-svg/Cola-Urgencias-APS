@@ -1,4 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Request,
+    status,
+)
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
@@ -15,6 +21,7 @@ from security import (
     get_current_user,
     verify_password,
 )
+from services.audit import create_audit_log
 
 
 router = APIRouter(
@@ -30,21 +37,23 @@ router = APIRouter(
 )
 def login(
     credentials: LoginRequest,
+    request: Request,
     database: Session = Depends(get_db),
 ) -> TokenResponse:
-    """
-    Autentica a un funcionario utilizando correo y contraseña.
-
-    Si las credenciales son correctas, devuelve un token JWT
-    y los datos básicos del usuario autenticado.
-    """
-
-    normalized_email = credentials.email.lower().strip()
+    normalized_email = (
+        credentials.email
+        .lower()
+        .strip()
+    )
 
     statement = (
         select(User)
-        .options(joinedload(User.role))
-        .where(User.email == normalized_email)
+        .options(
+            joinedload(User.role)
+        )
+        .where(
+            User.email == normalized_email
+        )
     )
 
     user = database.scalar(statement)
@@ -66,16 +75,44 @@ def login(
     ):
         raise invalid_credentials
 
-    if not user.active or not user.role.active:
+    if (
+        not user.active
+        or not user.role.active
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="La cuenta está desactivada.",
         )
 
-    access_token, expires_in = create_access_token(
-        user_id=user.id,
-        role=user.role.name,
+    access_token, expires_in = (
+        create_access_token(
+            user_id=user.id,
+            role=user.role.name,
+        )
     )
+
+    client_ip = (
+        request.client.host
+        if request.client is not None
+        else None
+    )
+
+    create_audit_log(
+        database,
+        user_id=user.id,
+        action="LOGIN_SUCCESS",
+        entity="User",
+        entity_id=str(user.id),
+        previous_values=None,
+        new_values={
+            "email": user.email,
+            "role": user.role.name,
+        },
+        ip_address=client_ip,
+        result="SUCCESS",
+    )
+
+    database.commit()
 
     return TokenResponse(
         access_token=access_token,
@@ -100,12 +137,10 @@ def login(
     status_code=status.HTTP_200_OK,
 )
 def get_authenticated_user(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(
+        get_current_user
+    ),
 ) -> UserResponse:
-    """
-    Devuelve los datos del usuario identificado por el token JWT.
-    """
-
     return UserResponse(
         id=current_user.id,
         name=current_user.name,

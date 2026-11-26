@@ -395,14 +395,12 @@ export const reportService = {
 
 
 export const auditService = {
-  list: () =>
-    USE_MOCKS
-      ? mockApi.audit()
-      : get<AuditLog[]>(
-          '/api/audit-logs',
-        ),
+ 
+  list: (): Promise<AuditLog[]> =>
+    get<AuditLog[]>(
+      '/api/audit-logs',
+    ),
 };
-
 
 export const userService = {
   list: () =>
