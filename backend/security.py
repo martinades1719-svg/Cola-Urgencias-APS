@@ -32,20 +32,36 @@ def verify_password(
             password_hash,
             plain_password,
         )
-    except (VerifyMismatchError, InvalidHashError):
+    except (
+        VerifyMismatchError,
+        InvalidHashError,
+    ):
         return False
+
+
+def hash_password(
+    plain_password: str,
+) -> str:
+    return password_hasher.hash(
+        plain_password
+    )
 
 
 def create_access_token(
     user_id: UUID,
     role: str,
 ) -> tuple[str, int]:
-    expires_in_seconds = settings.access_token_expire_minutes * 60
+    expires_in_seconds = (
+        settings.access_token_expire_minutes
+        * 60
+    )
 
     now = datetime.now(UTC)
 
     expiration = now + timedelta(
-        minutes=settings.access_token_expire_minutes
+        minutes=(
+            settings.access_token_expire_minutes
+        )
     )
 
     payload = {
@@ -65,12 +81,16 @@ def create_access_token(
     return token, expires_in_seconds
 
 
-def decode_access_token(token: str) -> dict[str, Any]:
+def decode_access_token(
+    token: str,
+) -> dict[str, Any]:
     try:
         payload = jwt.decode(
             token,
             settings.jwt_secret,
-            algorithms=[settings.jwt_algorithm],
+            algorithms=[
+                settings.jwt_algorithm
+            ],
             options={
                 "require": [
                     "sub",
@@ -84,7 +104,9 @@ def decode_access_token(token: str) -> dict[str, Any]:
 
     except InvalidTokenError as error:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=(
+                status.HTTP_401_UNAUTHORIZED
+            ),
             detail="Token inválido o expirado.",
             headers={
                 "WWW-Authenticate": "Bearer",
@@ -93,7 +115,9 @@ def decode_access_token(token: str) -> dict[str, Any]:
 
     if payload.get("type") != "access":
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=(
+                status.HTTP_401_UNAUTHORIZED
+            ),
             detail="Token inválido o expirado.",
             headers={
                 "WWW-Authenticate": "Bearer",
@@ -104,14 +128,17 @@ def decode_access_token(token: str) -> dict[str, Any]:
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials | None = Depends(
-        bearer_scheme
-    ),
+    credentials: (
+        HTTPAuthorizationCredentials
+        | None
+    ) = Depends(bearer_scheme),
     database: Session = Depends(get_db),
 ) -> User:
     if credentials is None:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=(
+                status.HTTP_401_UNAUTHORIZED
+            ),
             detail="Autenticación requerida.",
             headers={
                 "WWW-Authenticate": "Bearer",
@@ -120,19 +147,28 @@ def get_current_user(
 
     if credentials.scheme.lower() != "bearer":
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Método de autenticación inválido.",
+            status_code=(
+                status.HTTP_401_UNAUTHORIZED
+            ),
+            detail=(
+                "Método de autenticación inválido."
+            ),
             headers={
                 "WWW-Authenticate": "Bearer",
             },
         )
 
-    payload = decode_access_token(credentials.credentials)
+    payload = decode_access_token(
+        credentials.credentials
+    )
+
     user_id = payload.get("sub")
 
     if not isinstance(user_id, str):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=(
+                status.HTTP_401_UNAUTHORIZED
+            ),
             detail="Token inválido o expirado.",
             headers={
                 "WWW-Authenticate": "Bearer",
@@ -141,9 +177,12 @@ def get_current_user(
 
     try:
         parsed_user_id = UUID(user_id)
+
     except ValueError as error:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=(
+                status.HTTP_401_UNAUTHORIZED
+            ),
             detail="Token inválido o expirado.",
             headers={
                 "WWW-Authenticate": "Bearer",
@@ -152,24 +191,35 @@ def get_current_user(
 
     statement = (
         select(User)
-        .options(joinedload(User.role))
-        .where(User.id == parsed_user_id)
+        .options(
+            joinedload(User.role)
+        )
+        .where(
+            User.id == parsed_user_id
+        )
     )
 
     user = database.scalar(statement)
 
     if user is None:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=(
+                status.HTTP_401_UNAUTHORIZED
+            ),
             detail="Usuario no encontrado.",
             headers={
                 "WWW-Authenticate": "Bearer",
             },
         )
 
-    if not user.active or not user.role.active:
+    if (
+        not user.active
+        or not user.role.active
+    ):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=(
+                status.HTTP_403_FORBIDDEN
+            ),
             detail="La cuenta está desactivada.",
         )
 
@@ -177,8 +227,13 @@ def get_current_user(
 
     if token_role != user.role.name:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="El rol de la sesión ya no es válido.",
+            status_code=(
+                status.HTTP_401_UNAUTHORIZED
+            ),
+            detail=(
+                "El rol de la sesión "
+                "ya no es válido."
+            ),
             headers={
                 "WWW-Authenticate": "Bearer",
             },

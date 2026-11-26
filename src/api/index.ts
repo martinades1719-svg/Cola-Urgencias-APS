@@ -383,46 +383,35 @@ export const auditService = {
 };
 
 export const userService = {
-  list: () =>
-    USE_MOCKS
-      ? mockApi.users()
-      : get<User[]>(
-          '/api/users',
-        ),
+  list: (): Promise<User[]> =>
+    get<User[]>('/api/users'),
 
   create: (
     input: {
-      name?: string;
+      name: string;
       email: string;
       role: Role;
+      password: string;
     },
-  ) =>
-    USE_MOCKS
-      ? mockApi.createUser(input)
-      : post<User>(
-          '/api/users',
-          input,
-        ),
+  ): Promise<User> =>
+    post<User>(
+      '/api/users',
+      input,
+    ),
 
   status: (
     id: string,
     active: boolean,
-  ) =>
-    USE_MOCKS
-      ? mockApi.userStatus(
-          id,
-          active,
-        )
-      : http<ApiResponse<User>>(
-          `/api/users/${id}/status`,
-          'PATCH',
-          {
-            active,
-          },
-        ).then(
-          (response) =>
-            response.data,
-        ),
+  ): Promise<User> =>
+    http<ApiResponse<User>>(
+      `/api/users/${id}/status`,
+      'PATCH',
+      {
+        active,
+      },
+    ).then(
+      (response) => response.data,
+    ),
 };
 
 

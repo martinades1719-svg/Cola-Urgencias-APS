@@ -51,7 +51,13 @@ from schemas.report import (
     PriorityMetricResponse,
 )
 
-
+from schemas.user import (
+    CreateUserRequest,
+    ManagedUserDataResponse,
+    ManagedUserListResponse,
+    ManagedUserResponse,
+    UpdateUserStatusRequest,
+)
 __all__ = [
     "AlertDataResponse",
     "AlertListDataResponse",
@@ -85,4 +91,9 @@ __all__ = [
     "TriageRequest",
     "UserResponse",
     "WaitEstimateResponse",
+        "CreateUserRequest",
+    "ManagedUserDataResponse",
+    "ManagedUserListResponse",
+    "ManagedUserResponse",
+    "UpdateUserStatusRequest",
 ]
