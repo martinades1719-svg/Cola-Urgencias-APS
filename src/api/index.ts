@@ -351,39 +351,23 @@ export const queueService = {
 
 
 export const alertService = {
-  list: () =>
-    USE_MOCKS
-      ? mockApi.alerts()
-      : get<Alert[]>(
-          '/api/alerts',
-        ),
+  list: (): Promise<Alert[]> =>
+    get<Alert[]>('/api/alerts'),
 
   take: (
     id: string,
-  ) =>
-    USE_MOCKS
-      ? mockApi.alertAction(
-          id,
-          'take',
-        )
-      : post<Alert>(
-          `/api/alerts/${id}/take`,
-        ),
+  ): Promise<Alert> =>
+    post<Alert>(
+      `/api/alerts/${id}/take`,
+    ),
 
   resolve: (
     id: string,
-  ) =>
-    USE_MOCKS
-      ? mockApi.alertAction(
-          id,
-          'resolve',
-        )
-      : post<Alert>(
-          `/api/alerts/${id}/resolve`,
-        ),
+  ): Promise<Alert> =>
+    post<Alert>(
+      `/api/alerts/${id}/resolve`,
+    ),
 };
-
-
 export const reportService = {
   dashboard: () =>
     USE_MOCKS
