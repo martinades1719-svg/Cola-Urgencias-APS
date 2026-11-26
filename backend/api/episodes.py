@@ -20,6 +20,7 @@ from schemas import (
     TriageRequest,
 )
 from security import get_current_user
+from services.audit import create_audit_log
 
 
 router = APIRouter(
@@ -329,6 +330,24 @@ def register_initial_triage(
     episode.triage_at = current_time
     episode.status = "WAITING"
 
+    create_audit_log(
+        database,
+        user_id=current_user.id,
+        episode_id=episode.id,
+        action="TRIAGE_CREATED",
+        entity="Episode",
+        entity_id=str(episode.id),
+        previous_values={
+            "status": "PENDING_TRIAGE",
+            "priority": None,
+        },
+        new_values={
+            "status": "WAITING",
+            "priority": request.priority,
+        },
+        result="SUCCESS",
+    )
+
     refreshed_episode = commit_and_reload(
         database,
         episode,
@@ -426,6 +445,27 @@ def register_reassessment(
 
     episode.current_priority = request.priority
 
+    create_audit_log(
+        database,
+        user_id=current_user.id,
+        episode_id=episode.id,
+        action=(
+            "PRIORITY_CHANGED"
+            if request.priority != previous_priority
+            else "PATIENT_REASSESSED"
+        ),
+        entity="Episode",
+        entity_id=str(episode.id),
+        previous_values={
+            "priority": previous_priority,
+        },
+        new_values={
+            "priority": request.priority,
+            "reason": reason or None,
+        },
+        result="SUCCESS",
+    )
+
     refreshed_episode = commit_and_reload(
         database,
         episode,
@@ -479,6 +519,24 @@ def call_episode(
     episode.box = request.box.strip()
     episode.called_at = datetime.now(UTC)
 
+    create_audit_log(
+        database,
+        user_id=current_user.id,
+        episode_id=episode.id,
+        action="PATIENT_CALLED",
+        entity="Episode",
+        entity_id=str(episode.id),
+        previous_values={
+            "status": "WAITING",
+            "box": None,
+        },
+        new_values={
+            "status": "CALLED",
+            "box": episode.box,
+        },
+        result="SUCCESS",
+    )
+
     refreshed_episode = commit_and_reload(
         database,
         episode,
@@ -490,7 +548,10 @@ def call_episode(
         ),
     )
 
-
+@router.post(
+    "/{episode_id}/start-care",
+    response_model=EpisodeDataResponse,
+)
 @router.post(
     "/{episode_id}/start-care",
     response_model=EpisodeDataResponse,
@@ -530,6 +591,23 @@ def start_episode_care(
     episode.status = "IN_CARE"
     episode.care_started_at = datetime.now(UTC)
 
+    create_audit_log(
+        database,
+        user_id=current_user.id,
+        episode_id=episode.id,
+        action="CARE_STARTED",
+        entity="Episode",
+        entity_id=str(episode.id),
+        previous_values={
+            "status": "CALLED",
+        },
+        new_values={
+            "status": "IN_CARE",
+            "box": episode.box,
+        },
+        result="SUCCESS",
+    )
+
     refreshed_episode = commit_and_reload(
         database,
         episode,
@@ -540,8 +618,6 @@ def start_episode_care(
             refreshed_episode
         ),
     )
-
-
 @router.post(
     "/{episode_id}/close",
     response_model=EpisodeDataResponse,
