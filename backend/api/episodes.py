@@ -661,18 +661,15 @@ def close_episode(
             ),
         )
 
-    normalized_reason = (
-        request.reason.strip()
-    )
+    previous_status = episode.status
+    normalized_reason = request.reason.strip()
 
-    if (
-        normalized_reason
-        in WITHDRAWAL_REASONS
-    ):
+    if normalized_reason in WITHDRAWAL_REASONS:
         episode.status = "WITHDRAWN"
+        audit_action = "PATIENT_WITHDRAWN"
 
     else:
-        if episode.status != "IN_CARE":
+        if previous_status != "IN_CARE":
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=(
@@ -682,9 +679,27 @@ def close_episode(
             )
 
         episode.status = "CLOSED"
+        audit_action = "EPISODE_CLOSED"
 
     episode.closure_reason = normalized_reason
     episode.closed_at = datetime.now(UTC)
+
+    create_audit_log(
+        database,
+        user_id=current_user.id,
+        episode_id=episode.id,
+        action=audit_action,
+        entity="Episode",
+        entity_id=str(episode.id),
+        previous_values={
+            "status": previous_status,
+        },
+        new_values={
+            "status": episode.status,
+            "reason": normalized_reason,
+        },
+        result="SUCCESS",
+    )
 
     refreshed_episode = commit_and_reload(
         database,
