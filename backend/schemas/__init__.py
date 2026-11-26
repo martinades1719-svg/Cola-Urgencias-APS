@@ -45,6 +45,12 @@ from schemas.queue import (
     WaitEstimateResponse,
 )
 
+from schemas.report import (
+    DashboardDataResponse,
+    DashboardMetricsResponse,
+    PriorityMetricResponse,
+)
+
 
 __all__ = [
     "AlertDataResponse",
@@ -58,11 +64,14 @@ __all__ = [
     "AuditLogResponse",
     "CallEpisodeRequest",
     "CloseEpisodeRequest",
+    "DashboardDataResponse",
+    "DashboardMetricsResponse",
     "EpisodeDataResponse",
     "EpisodeListDataResponse",
     "EpisodeResponse",
     "LoginRequest",
     "PatientEpisodeResponse",
+    "PriorityMetricResponse",
     "PublicStatusDataResponse",
     "PublicStatusResponse",
     "QueueItemResponse",

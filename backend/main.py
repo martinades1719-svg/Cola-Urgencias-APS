@@ -9,6 +9,7 @@ from api.public import router as public_router
 from api.queue import router as queue_router
 from api.audit import router as audit_router
 from api.alerts import router as alerts_router
+from api.reports import router as reports_router
 from database import engine
 
 
@@ -32,6 +33,7 @@ app.include_router(episodes_router)
 app.include_router(queue_router)
 app.include_router(audit_router)
 app.include_router(alerts_router)
+app.include_router(reports_router)
 
 
 @app.get("/")

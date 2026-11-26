@@ -369,15 +369,11 @@ export const alertService = {
     ),
 };
 export const reportService = {
-  dashboard: () =>
-    USE_MOCKS
-      ? mockApi.dashboard()
-      : get<DashboardMetrics>(
-          '/api/reports/dashboard',
-        ),
+  dashboard: (): Promise<DashboardMetrics> =>
+    get<DashboardMetrics>(
+      '/api/reports/dashboard',
+    ),
 };
-
-
 export const auditService = {
  
   list: (): Promise<AuditLog[]> =>
