@@ -73,3 +73,59 @@ def test_invalid_public_ticket_returns_not_found() -> None:
         "No encontramos"
         in response.json()["detail"]
     )
+
+
+def test_security_headers_are_present() -> None:
+    response = client.get(
+        "/health"
+    )
+
+    assert response.status_code == 200
+
+    assert (
+        response.headers[
+            "x-content-type-options"
+        ]
+        == "nosniff"
+    )
+
+    assert (
+        response.headers[
+            "x-frame-options"
+        ]
+        == "DENY"
+    )
+
+    assert (
+        response.headers[
+            "referrer-policy"
+        ]
+        == "strict-origin-when-cross-origin"
+    )
+
+    assert (
+        response.headers[
+            "content-security-policy"
+        ]
+        == (
+            "default-src 'none'; "
+            "frame-ancestors 'none'; "
+            "base-uri 'none'; "
+            "form-action 'self'"
+        )
+    )
+
+
+def test_api_responses_disable_cache() -> None:
+    response = client.get(
+        "/api/auth/me"
+    )
+
+    assert response.status_code == 401
+
+    assert (
+        response.headers[
+            "cache-control"
+        ]
+        == "no-store"
+    )
