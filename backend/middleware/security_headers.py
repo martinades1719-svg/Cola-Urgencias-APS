@@ -13,9 +13,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             Awaitable[Response],
         ],
     ) -> Response:
-        response = await call_next(
-            request
-        )
+        response = await call_next(request)
 
         response.headers[
             "X-Content-Type-Options"
@@ -41,17 +39,19 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "Cross-Origin-Opener-Policy"
         ] = "same-origin"
 
-        response.headers[
-            "Cross-Origin-Resource-Policy"
-        ] = "same-site"
+        if request.url.path.startswith("/api/"):
+            response.headers[
+                "Cross-Origin-Resource-Policy"
+            ] = "cross-origin"
 
-        if request.url.path.startswith(
-            "/api/"
-        ):
             response.headers[
                 "Cache-Control"
             ] = "no-store"
         else:
+            response.headers[
+                "Cross-Origin-Resource-Policy"
+            ] = "same-site"
+
             response.headers[
                 "Cache-Control"
             ] = "no-cache"

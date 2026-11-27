@@ -107,3 +107,15 @@ def test_api_responses_disable_cache() -> None:
 
     assert response.status_code == 401
     assert response.headers["cache-control"] == "no-store"
+
+
+def test_api_allows_cross_origin_resources() -> None:
+    response = client.get("/api/auth/me")
+
+    assert response.status_code == 401
+    assert (
+        response.headers[
+            "cross-origin-resource-policy"
+        ]
+        == "cross-origin"
+    )
