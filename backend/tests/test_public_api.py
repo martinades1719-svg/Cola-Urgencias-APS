@@ -14,10 +14,7 @@ def test_root_endpoint_returns_running_status() -> None:
     body = response.json()
 
     assert body["status"] == "running"
-    assert (
-        body["message"]
-        == "Cola Urgencias APS API"
-    )
+    assert body["message"] == "Cola Urgencias APS API"
 
 
 def test_health_endpoint_returns_healthy_status() -> None:
@@ -28,36 +25,26 @@ def test_health_endpoint_returns_healthy_status() -> None:
     body = response.json()
 
     assert body["status"] == "healthy"
-    assert (
-        body["service"]
-        == "cola-urgencias-api"
-    )
+    assert body["service"] == "cola-urgencias-api"
 
 
 def test_auth_me_requires_authentication() -> None:
-    response = client.get(
-        "/api/auth/me"
-    )
+    response = client.get("/api/auth/me")
 
     assert response.status_code == 401
-
     assert response.json() == {
         "detail": "Autenticación requerida."
     }
 
 
 def test_users_endpoint_requires_authentication() -> None:
-    response = client.get(
-        "/api/users"
-    )
+    response = client.get("/api/users")
 
     assert response.status_code == 401
 
 
 def test_audit_endpoint_requires_authentication() -> None:
-    response = client.get(
-        "/api/audit-logs"
-    )
+    response = client.get("/api/audit-logs")
 
     assert response.status_code == 401
 
@@ -68,45 +55,25 @@ def test_invalid_public_ticket_returns_not_found() -> None:
     )
 
     assert response.status_code == 404
-
-    assert (
-        "No encontramos"
-        in response.json()["detail"]
-    )
+    assert "No encontramos" in response.json()["detail"]
 
 
 def test_security_headers_are_present() -> None:
-    response = client.get(
-        "/health"
-    )
+    response = client.get("/health")
 
     assert response.status_code == 200
-
     assert (
-        response.headers[
-            "x-content-type-options"
-        ]
+        response.headers["x-content-type-options"]
         == "nosniff"
     )
-
+    assert response.headers["x-frame-options"] == "DENY"
     assert (
-        response.headers[
-            "x-frame-options"
-        ]
-        == "DENY"
-    )
-
-    assert (
-        response.headers[
-            "referrer-policy"
-        ]
+        response.headers["referrer-policy"]
         == "strict-origin-when-cross-origin"
     )
 
     assert (
-        response.headers[
-            "content-security-policy"
-        ]
+        response.headers["content-security-policy"]
         == (
             "default-src 'none'; "
             "frame-ancestors 'none'; "
@@ -116,16 +83,27 @@ def test_security_headers_are_present() -> None:
     )
 
 
-def test_api_responses_disable_cache() -> None:
-    response = client.get(
-        "/api/auth/me"
-    )
+def test_swagger_has_compatible_security_policy() -> None:
+    response = client.get("/docs")
 
-    assert response.status_code == 401
+    assert response.status_code == 200
+
+    content_security_policy = response.headers[
+        "content-security-policy"
+    ]
 
     assert (
-        response.headers[
-            "cache-control"
-        ]
-        == "no-store"
+        "https://cdn.jsdelivr.net"
+        in content_security_policy
     )
+    assert (
+        "frame-ancestors 'none'"
+        in content_security_policy
+    )
+
+
+def test_api_responses_disable_cache() -> None:
+    response = client.get("/api/auth/me")
+
+    assert response.status_code == 401
+    assert response.headers["cache-control"] == "no-store"

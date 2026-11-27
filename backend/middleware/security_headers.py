@@ -45,23 +45,49 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "Cross-Origin-Resource-Policy"
         ] = "same-site"
 
-        response.headers[
-            "Cache-Control"
-        ] = (
-            "no-store"
-            if request.url.path.startswith(
-                "/api/"
-            )
-            else "no-cache"
-        )
+        if request.url.path.startswith(
+            "/api/"
+        ):
+            response.headers[
+                "Cache-Control"
+            ] = "no-store"
+        else:
+            response.headers[
+                "Cache-Control"
+            ] = "no-cache"
 
-        response.headers[
-            "Content-Security-Policy"
-        ] = (
-            "default-src 'none'; "
-            "frame-ancestors 'none'; "
-            "base-uri 'none'; "
-            "form-action 'self'"
-        )
+        if request.url.path in {
+            "/docs",
+            "/redoc",
+            "/openapi.json",
+        }:
+            response.headers[
+                "Content-Security-Policy"
+            ] = (
+                "default-src 'self'; "
+                "script-src 'self' "
+                "'unsafe-inline' "
+                "https://cdn.jsdelivr.net; "
+                "style-src 'self' "
+                "'unsafe-inline' "
+                "https://cdn.jsdelivr.net; "
+                "img-src 'self' data: "
+                "https://fastapi.tiangolo.com; "
+                "font-src 'self' "
+                "https://cdn.jsdelivr.net; "
+                "connect-src 'self'; "
+                "frame-ancestors 'none'; "
+                "base-uri 'none'; "
+                "form-action 'self'"
+            )
+        else:
+            response.headers[
+                "Content-Security-Policy"
+            ] = (
+                "default-src 'none'; "
+                "frame-ancestors 'none'; "
+                "base-uri 'none'; "
+                "form-action 'self'"
+            )
 
         return response
