@@ -119,3 +119,36 @@ def test_api_allows_cross_origin_resources() -> None:
         ]
         == "cross-origin"
     )
+
+
+def test_public_status_schema_accepts_public_position() -> None:
+    from datetime import UTC, datetime
+
+    from schemas.public import (
+        PublicStatusResponse,
+        QueuePositionResponse,
+        WaitEstimateResponse,
+    )
+
+    current_time = datetime.now(UTC)
+
+    response = PublicStatusResponse(
+        ticket="URG-TEST01",
+        status="PENDING_TRIAGE",
+        arrivedAt=current_time,
+        updatedAt=current_time,
+        box=None,
+        position=QueuePositionResponse(
+            approximate=None,
+            estimate=WaitEstimateResponse(
+                min=0,
+                max=0,
+                available=False,
+            ),
+            reordered=False,
+        ),
+    )
+
+    assert response.ticket == "URG-TEST01"
+    assert response.position.approximate is None
+    assert response.position.estimate.available is False

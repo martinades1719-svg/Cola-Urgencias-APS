@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models import Episode, Patient
-from schemas import (
+from schemas.public import (
     ArrivalDataResponse,
     ArrivalRequest,
     ArrivalResponse,
