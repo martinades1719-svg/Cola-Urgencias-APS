@@ -25,20 +25,19 @@ app = FastAPI(
 )
 
 
-
+# Cabeceras HTTP de seguridad.
 app.add_middleware(
     SecurityHeadersMiddleware
 )
 
 
-
+# Orígenes autorizados para desarrollo local y producción.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-    "http://localhost:8080",
-    "https://cola-urgencias-fub60774-martinades1719-svg.vercel.app",
-],
-
+        "http://localhost:8080",
+        "https://cola-urgencias-aps.vercel.app",
+    ],
     allow_credentials=True,
     allow_methods=[
         "GET",
@@ -53,7 +52,7 @@ app.add_middleware(
 )
 
 
-
+# Módulos de la API.
 app.include_router(auth_router)
 app.include_router(public_router)
 app.include_router(episodes_router)
