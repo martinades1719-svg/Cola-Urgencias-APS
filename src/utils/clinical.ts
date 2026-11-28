@@ -3,7 +3,10 @@ export const priorities: Priority[] = ['C1', 'C2', 'C3', 'C4', 'C5'];
 export const statusLabels: Record<EpisodeStatus, string> = { PENDING_TRIAGE: 'Pendiente de triage', WAITING: 'Esperando atención', CALLED: 'Paciente llamado', IN_CARE: 'En atención', CLOSED: 'Atención finalizada', WITHDRAWN: 'Paciente retirado' };
 export const roleLabels: Record<Role, string> = { RECEPTION: 'Recepción', TRIAGE: 'Triage', CLINICAL_MANAGER: 'Jefatura clínica', ADMIN: 'Administración' };
 export const canAssess = (role: Role) => role === 'TRIAGE' || role === 'CLINICAL_MANAGER';
-export const canOperate = (role: Role) => role === 'RECEPTION' || role === 'CLINICAL_MANAGER';
+export const canOperate = (role: Role) =>
+  role === 'RECEPTION' ||
+  role === 'TRIAGE' ||
+  role === 'CLINICAL_MANAGER';
 export const canManageUsers = (role: Role) => role === 'ADMIN';
 export const canAudit = (role: Role) => role === 'ADMIN' || role === 'CLINICAL_MANAGER';
 export const sortQueue = (episodes: Episode[]) => episodes.filter(e => e.status === 'WAITING' && e.priority !== null).sort((a,b) => (a.priority ?? 'C5').localeCompare(b.priority ?? 'C5') || Date.parse(a.triageAt ?? a.arrivedAt) - Date.parse(b.triageAt ?? b.arrivedAt));
