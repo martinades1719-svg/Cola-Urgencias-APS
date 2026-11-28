@@ -548,10 +548,7 @@ def call_episode(
         ),
     )
 
-@router.post(
-    "/{episode_id}/start-care",
-    response_model=EpisodeDataResponse,
-)
+
 @router.post(
     "/{episode_id}/start-care",
     response_model=EpisodeDataResponse,
