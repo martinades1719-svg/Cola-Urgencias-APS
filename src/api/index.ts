@@ -262,18 +262,9 @@ export const publicService = {
 
 export const episodeService = {
   list: () =>
-    USE_MOCKS
-      ? mockApi.episodes()
-      : get<Episode[]>('/api/episodes'),
-
-  detail: (
-    id: string,
-  ) =>
-    USE_MOCKS
-      ? mockApi.episode(id)
-      : get<Episode>(
-          `/api/episodes/${id}`,
-        ),
+    get<Episode[]>(
+      '/api/episodes',
+    ),
 
   pending: (): Promise<Episode[]> =>
     get<Episode[]>(

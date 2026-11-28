@@ -252,7 +252,66 @@ def list_pending_triage(
             for episode in episodes
         ],
     )
+@router.get(
+    "",
+    response_model=EpisodeListDataResponse,
+)
+def list_episodes(
+    database: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> EpisodeListDataResponse:
+    require_queue_role(current_user)
 
+    statement = (
+        select(Episode)
+        .options(
+            selectinload(Episode.patient),
+            selectinload(Episode.assessments),
+        )
+        .order_by(
+            Episode.arrived_at.desc()
+        )
+    )
+
+    episodes = list(
+        database.scalars(statement)
+    )
+
+    return EpisodeListDataResponse(
+        data=[
+            serialize_episode(episode)
+            for episode in episodes
+        ],
+    )
+
+
+@router.get(
+    "/{episode_id}",
+    response_model=EpisodeDataResponse,
+)
+def get_episode(
+    episode_id: UUID,
+    database: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> EpisodeDataResponse:
+    require_queue_role(current_user)
+
+    episode = load_episode(
+        database,
+        episode_id,
+    )
+
+    if episode is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No encontramos el episodio solicitado.",
+        )
+
+    return EpisodeDataResponse(
+        data=serialize_episode(
+            episode
+        ),
+    )
 
 @router.post(
     "/{episode_id}/triage",
